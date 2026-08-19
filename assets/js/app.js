@@ -157,6 +157,7 @@ $(document).ready(function () {
         if (action === 'delete') {
 
             $('#confirmDelete').data('ids', selectedUsers);
+            actionSelect.val('');
 
             const modal = new bootstrap.Modal('#deleteModal');
             modal.show();
