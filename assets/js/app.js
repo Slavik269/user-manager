@@ -132,7 +132,8 @@ $(document).ready(function () {
 
     $(document).on('click', '.bulk-ok', function () {
 
-        const action = $('.bulk-action').first().val();
+        const actionSelect = $(this).siblings('.bulk-action');
+        const action = actionSelect.val();
 
         const selectedUsers = $('.user-checkbox:checked')
             .map(function () {
@@ -141,6 +142,7 @@ $(document).ready(function () {
             .get();
 
         if (selectedUsers.length === 0) {
+            
             showMessage('Please select at least one user.');
             return;
         }
@@ -148,7 +150,6 @@ $(document).ready(function () {
         if (action === '') {
 
             showMessage('Please select an action.');
-
             return;
         }
 
@@ -177,8 +178,8 @@ $(document).ready(function () {
                 if (response.status === true) {
 
                     loadUsers();
-
                     resetSelection();
+                    actionSelect.val('');
 
                 } else {
 
@@ -187,14 +188,6 @@ $(document).ready(function () {
             },
             error: handleAjaxError
         });
-    });
-
-    $(document).on('change', '.bulk-action', function () {
-
-        const action = $(this).val();
-
-        $('.bulk-action').val(action);
-
     });
 
     $('#saveUser').on('click', function () {
@@ -247,7 +240,6 @@ $(document).ready(function () {
 
         $('#selectAllUsers').prop('checked', false);
         $('.user-checkbox').prop('checked', false);
-        $('.bulk-action').val('');
 
     }
 
