@@ -1,14 +1,60 @@
 <?php
 
+//http://user-manager.test/api/users.php
+//http://user-manager.test/api/users.php?id=1
+
 require_once '../config/database.php';
 header('Content-Type: application/json; charset=utf-8');
 
+function validateUserInput($nameFirst, $nameLast, $role, $status)
+{
+    // Перевіряємо обов'язкові поля
+    if ($nameFirst === '' || $nameLast === '' || $role === '') {
+        return [
+            'code' => 101,
+            'message' => 'Required fields are empty'
+        ];
+    }
+
+    // Перевіряємо допустимість ролі
+    if ($role !== 'admin' && $role !== 'user') {
+        return [
+            'code' => 102,
+            'message' => 'Invalid role'
+        ];
+    }
+
+    // Перевіряємо статус
+    if ($status !== 0 && $status !== 1) {
+        return [
+            'code' => 106,
+            'message' => 'Invalid status'
+        ];
+    }
+
+    return null;
+}
+
+
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 
-    // Якщо переданий id, отримуємо конкретного користувача
     if (isset($_GET['id'])) {
 
         $id = (int) $_GET['id'];
+
+        if ($id <= 0) {
+
+            echo json_encode([
+                'status' => false,
+                'error' => [
+                    'code' => 103,
+                    'message' => 'Invalid user ID'
+                ]
+            ]);
+
+            exit;
+        }    
+
         $stmt = $pdo->prepare(
             "SELECT id, name_first, name_last, status, role
              FROM users
@@ -42,12 +88,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         exit;
     }
 
-    // Якщо id не переданий, отримуємо всіх користувачів
     $stmt = $pdo->query(
         "SELECT id, name_first, name_last, status, role
          FROM users"
     );
-
+    
     $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     echo json_encode([
@@ -60,7 +105,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
-    // Обробляємо групову дію
+    // Обробляємо групову зміну статусу
     if (isset($_POST['action']) && isset($_POST['users'])) {
 
         $action = $_POST['action'];
@@ -80,7 +125,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         // Перевіряємо допустимість дії
-        if (!in_array($action, ['active', 'inactive', 'delete'])) {
+        if (!in_array($action, ['active', 'inactive'])) {
 
             echo json_encode([
                 'status' => false,
@@ -92,7 +137,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         }
 
-        // Виконуємо дію для кожного вибраного користувача
         foreach ($users as $userId) {
 
             $userId = (int)$userId;
@@ -107,16 +151,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     "UPDATE users SET status = 1 WHERE id = :id"
                 );
 
-            } elseif ($action === 'inactive') {
-
-                $stmt = $pdo->prepare(
-                    "UPDATE users SET status = 0 WHERE id = :id"
-                );
-
             } else {
 
                 $stmt = $pdo->prepare(
-                    "DELETE FROM users WHERE id = :id"
+                    "UPDATE users SET status = 0 WHERE id = :id"
                 );
             }
 
@@ -132,54 +170,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
-    // Отримуємо дані з форми
     $id = isset($_POST['id']) ? (int)$_POST['id'] : 0;
     $nameFirst = trim($_POST['name_first'] ?? '');
     $nameLast = trim($_POST['name_last'] ?? '');
     $status = isset($_POST['status']) ? (int)$_POST['status'] : 0;
     $role = trim($_POST['role'] ?? '');
 
-    // Перевіряємо статус
-    if ($status !== 0 && $status !== 1) {
+
+    $validationError = validateUserInput(
+        $nameFirst,
+        $nameLast,
+        $role,
+        $status
+    );
+
+    if ($validationError !== null) {
 
         echo json_encode([
             'status' => false,
-            'error' => [
-                'code' => 106,
-                'message' => 'Invalid status'
-            ]
+            'error' => $validationError
         ]);
 
         exit;
     }
 
-    // Перевіряємо обов'язкові поля
-    if ($nameFirst === '' || $nameLast === '' || $role === '') {
-
-        echo json_encode([
-            'status' => false,
-            'error' => [
-                'code' => 101,
-                'message' => 'Required fields are empty'
-            ]
-        ]);
-        exit;
-    }
-
-    // Перевіряємо допустимість ролі
-    if ($role !== 'admin' && $role !== 'user') {
-
-        echo json_encode([
-            'status' => false,
-            'error' => [
-                'code' => 102,
-                'message' => 'Invalid role'
-            ]
-        ]);
-        exit;
-    }
-
-    // Якщо id переданий, редагуємо користувача
     if ($id > 0) {
 
         // Перевіряємо, чи існує користувач
@@ -229,7 +243,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
-    // Якщо id немає, створюємо нового користувача
     $stmt = $pdo->prepare(
         "INSERT INTO users (name_first, name_last, status, role)
          VALUES (:name_first, :name_last, :status, :role)"
@@ -261,7 +274,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'DELETE') {
         echo json_encode([
             'status' => false,
             'error' => [
-                'code' => 103,
+                'code' => 108,
                 'message' => 'No users selected'
             ]
         ]);
@@ -293,3 +306,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'DELETE') {
 
     exit;
 }
+
+// Повертаємо помилку для невідомого HTTP-методу
+echo json_encode([
+    'status' => false,
+    'error' => [
+        'code' => 400,
+        'message' => 'Method not allowed'
+    ]
+]);
+
+exit;

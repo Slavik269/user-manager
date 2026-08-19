@@ -1,21 +1,15 @@
 $(document).ready(function () {
 
+    const API_URL = 'api/users.php';
+
     loadUsers();
 
-    // Відкриваємо modal для додавання нового користувача
     $('.add-user').on('click', function () {
 
-        // Переводимо modal у режим додавання
         $('#userModalTitle').text('Add User');
-
-        // Очищаємо id
         $('#userId').val('');
-
-        // Очищаємо поля форми
         $('#firstName').val('');
         $('#lastName').val('');
-
-        // Встановлюємо значення за замовчуванням
         $('#userStatus').prop('checked', true);
         $('#userRole').val('user');
 
@@ -26,13 +20,12 @@ $(document).ready(function () {
         modal.show();
     });
 
-    // Відкриваємо вікно для редагування користувача
     $(document).on('click', '.edit-user', function () {
         
         const userId = $(this).data('id');
 
         $.ajax({
-            url: 'api/users.php',
+            url: API_URL,
             method: 'GET',
             data: {
                 id: userId
@@ -61,23 +54,21 @@ $(document).ready(function () {
                     showMessage(response.error.message);
                 }
             },
-            error: function (xhr) {
-                console.log('Помилка Ajax:', xhr.responseText);
-            }
+            error: handleAjaxError
         });
     });
 
-    // Відкриваємо вікно підтвердження видалення користувача
     $(document).on('click', '.delete-user', function () {
 
         const userId = $(this).data('id');
+
+        $('#confirmDelete').removeData('ids');
         $('#confirmDelete').data('id', userId);
 
         const modal = new bootstrap.Modal('#deleteModal');
         modal.show();
     });
 
-    // Підтверджуємо видалення користувача або групи користувачів
     $('#confirmDelete').on('click', function () {
 
         const userId = $(this).data('id');
@@ -86,7 +77,7 @@ $(document).ready(function () {
         const ids = userIds || [userId];
 
         $.ajax({
-            url: 'api/users.php',
+            url: API_URL,
             method: 'DELETE',
             data: {
                 ids: ids
@@ -97,25 +88,12 @@ $(document).ready(function () {
 
                 if (response.status === true) {
 
-                    // Закриваємо modal після успішного видалення
                     const modal = bootstrap.Modal.getInstance(
                         document.getElementById('deleteModal')
                     );
 
                     modal.hide();
-
-                    // Очищаємо збережені id
-                    $('#confirmDelete').removeData('id');
-                    $('#confirmDelete').removeData('ids');
-
-                    // Очищаємо вибір користувачів
-                    $('#selectAllUsers').prop('checked', false);
-                    $('.user-checkbox').prop('checked', false);
-
-                    // Повертаємо select до початкового значення
-                    $('.bulk-action').val('');
-
-                    // Оновлюємо таблицю
+                    resetSelection();
                     loadUsers();
 
                 } else {
@@ -123,20 +101,23 @@ $(document).ready(function () {
                     showMessage(response.error.message);
                 }
             },
-            error: function (xhr) {
-                console.log('Помилка Ajax:', xhr.responseText);
-            }
+            error: handleAjaxError
         });
     });
 
-    // Вибираємо або знімаємо всіх користувачів
+    $('#deleteModal').on('hidden.bs.modal', function () {
+
+        $('#confirmDelete').removeData('id');
+        $('#confirmDelete').removeData('ids');
+
+    });
+
     $(document).on('change', '#selectAllUsers', function () {
 
         $('.user-checkbox').prop('checked', this.checked);
 
     });
 
-    // Перевіряємо стан головного чекбокса після зміни окремого користувача
     $(document).on('change', '.user-checkbox', function () {
 
         const totalUsers = $('.user-checkbox').length;
@@ -149,25 +130,6 @@ $(document).ready(function () {
 
     });
 
-    // Синхронізуємо верхній та нижній select
-    $(document).on('change', '.bulk-action', function () {
-
-        const action = $(this).val();
-
-        $('.bulk-action').val(action);
-
-    });
-
-    // Показуємо повідомлення в Bootstrap
-    function showMessage(message) {
-
-        $('#messageModalBody').text(message);
-
-        const modal = new bootstrap.Modal('#messageModal');
-        modal.show();
-    }
-
-    // Обробляємо натискання кнопки підтвердження для групової дії
     $(document).on('click', '.bulk-ok', function () {
 
         const action = $('.bulk-action').first().val();
@@ -202,7 +164,7 @@ $(document).ready(function () {
         }
 
         $.ajax({
-            url: 'api/users.php',
+            url: API_URL,
             method: 'POST',
             data: {
                 action: action,
@@ -216,23 +178,25 @@ $(document).ready(function () {
 
                     loadUsers();
 
-                    // Прибираємо обрані категорії
-                    $('#selectAllUsers').prop('checked', false);
-                    $('.user-checkbox').prop('checked', false);
-                    $('.bulk-action').val('');
+                    resetSelection();
 
                 } else {
 
                     showMessage(response.error.message);
                 }
             },
-            error: function (xhr) {
-                console.log('Помилка Ajax:', xhr.responseText);
-            }
+            error: handleAjaxError
         });
     });
 
-    // Зберігаємо нового користувача
+    $(document).on('change', '.bulk-action', function () {
+
+        const action = $(this).val();
+
+        $('.bulk-action').val(action);
+
+    });
+
     $('#saveUser').on('click', function () {
 
         const userData = {
@@ -244,7 +208,7 @@ $(document).ready(function () {
         };
 
         $.ajax({
-            url: 'api/users.php',
+            url: API_URL,
             method: 'POST',
             data: userData,
             dataType: 'json',
@@ -266,19 +230,39 @@ $(document).ready(function () {
                 }
             },
 
-            error: function (xhr) {
-
-                console.log('Помилка Ajax:', xhr.responseText);
-            }
+            error: handleAjaxError
         });
 
     });
 
-    // Отримуємо список користувачів з сервера
+    function handleAjaxError(xhr) {
+
+        console.log('Помилка Ajax:', xhr.responseText);
+
+        showMessage('Сталася помилка з’єднання з сервером.');
+
+    }
+    
+    function resetSelection() {
+
+        $('#selectAllUsers').prop('checked', false);
+        $('.user-checkbox').prop('checked', false);
+        $('.bulk-action').val('');
+
+    }
+
+    function showMessage(message) {
+
+        $('#messageModalBody').text(message);
+
+        const modal = new bootstrap.Modal('#messageModal');
+        modal.show();
+    }
+
     function loadUsers() {
 
         $.ajax({
-            url: 'api/users.php',
+            url: API_URL,
             method: 'GET',
             dataType: 'json',
 
@@ -292,13 +276,10 @@ $(document).ready(function () {
 
             },
 
-            error: function (xhr) {
-                console.log('Помилка Ajax:', xhr.responseText);
-            }
+            error: handleAjaxError
         });
     }
 
-    // Створюємо рядки таблиці з отриманих користувачів
     function renderUsers(users) {
 
         const tableBody = $('#usersTableBody');
@@ -349,7 +330,6 @@ $(document).ready(function () {
                     </td>
                 </tr>
             `;
-            // Додаємо створений рядок у таблицю
             tableBody.append(row);
         });
     }
