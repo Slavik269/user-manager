@@ -94,10 +94,12 @@ $(document).ready(function () {
 
                     modal.hide();
                     resetSelection();
-                    loadUsers();
+
+                    ids.forEach(function (id) {
+                        $(`tr[data-user-id="${id}"]`).remove();
+                    });
 
                 } else {
-
                     showMessage(response.error.message);
                 }
             },
@@ -157,7 +159,6 @@ $(document).ready(function () {
         if (action === 'delete') {
 
             $('#confirmDelete').data('ids', selectedUsers);
-            actionSelect.val('');
 
             const modal = new bootstrap.Modal('#deleteModal');
             modal.show();
@@ -178,12 +179,20 @@ $(document).ready(function () {
 
                 if (response.status === true) {
 
-                    loadUsers();
+                    const statusCircle = action === 'active'
+                        ? '<span class="text-success fs-4">●</span>'
+                        : '<span class="text-secondary fs-4">●</span>';
+
+                    selectedUsers.forEach(function (id) {
+
+                        $(`tr[data-user-id="${id}"] .status-cell`)
+                            .html(statusCircle);
+
+                    });
+
                     resetSelection();
-                    actionSelect.val('');
 
                 } else {
-
                     showMessage(response.error.message);
                 }
             },
@@ -207,22 +216,40 @@ $(document).ready(function () {
             data: userData,
             dataType: 'json',
 
-            success: function (response) {
+                success: function (response) {
 
-                if (response.status === true) {
-                    const modal = bootstrap.Modal.getInstance(
-                        document.getElementById('userModal')
-                    );
+                    if (response.status === true) {
 
-                    modal.hide();
-                    loadUsers();
+                        const modal = bootstrap.Modal.getInstance(
+                            document.getElementById('userModal')
+                        );
 
-                } else {
+                        modal.hide();
 
-                    showMessage(response.error.message);
+                        const user = {
+                            id: response.id,
+                            name_first: userData.name_first,
+                            name_last: userData.name_last,
+                            status: userData.status,
+                            role: userData.role
+                        };
 
-                }
-            },
+                        if (userData.id === '') {
+
+                            $('#usersTableBody').append(buildUserRow(user));
+
+                        } else {
+
+                            $(`tr[data-user-id="${userData.id}"]`)
+                                .replaceWith(buildUserRow(user));
+                        }
+
+                    } else {
+
+                        showMessage(response.error.message);
+
+                    }
+                },
 
             error: handleAjaxError
         });
@@ -241,6 +268,7 @@ $(document).ready(function () {
 
         $('#selectAllUsers').prop('checked', false);
         $('.user-checkbox').prop('checked', false);
+        $('.bulk-action').val('');
 
     }
 
@@ -273,57 +301,61 @@ $(document).ready(function () {
         });
     }
 
+    function buildUserRow(user) {
+
+        const statusCircle = user.status == 1
+            ? '<span class="text-success fs-4">●</span>'
+            : '<span class="text-secondary fs-4">●</span>';
+
+        return `
+            <tr data-user-id="${user.id}">
+                <td>
+                    <input
+                        type="checkbox"
+                        class="form-check-input user-checkbox"
+                        value="${user.id}"
+                    >
+                </td>
+
+                <td>
+                    ${user.name_first} ${user.name_last}
+                </td>
+
+                <td class="status-cell">
+                    ${statusCircle}
+                </td>
+
+                <td>
+                    ${user.role}
+                </td>
+
+                <td>
+                    <button
+                        type="button"
+                        class="btn btn-sm btn-outline-primary edit-user"
+                        data-id="${user.id}">
+                        <i class="bi bi-pencil"></i>
+                    </button>
+
+                    <button
+                        type="button"
+                        class="btn btn-sm btn-outline-danger delete-user"
+                        data-id="${user.id}">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </td>
+            </tr>
+        `;
+    }
+
     function renderUsers(users) {
 
         const tableBody = $('#usersTableBody');
+
         tableBody.empty();
 
         users.forEach(function (user) {
-
-            const statusCircle = user.status == 1
-                ? '<span class="text-success fs-4">●</span>'
-                : '<span class="text-secondary fs-4">●</span>';
-
-            const row = `
-                <tr>
-                    <td>
-                        <input
-                            type="checkbox"
-                            class="form-check-input user-checkbox"
-                            value="${user.id}"
-                        >
-                    </td>
-
-                    <td>
-                        ${user.name_first} ${user.name_last}
-                    </td>
-
-                    <td>
-                        ${statusCircle}
-                    </td>
-
-                    <td>
-                        ${user.role}
-                    </td>
-
-                    <td>
-                        <button
-                            type="button"
-                            class="btn btn-sm btn-outline-primary edit-user"
-                            data-id="${user.id}">
-                            <i class="bi bi-pencil"></i>
-                        </button>
-
-                        <button
-                            type="button"
-                            class="btn btn-sm btn-outline-danger delete-user"
-                            data-id="${user.id}">
-                            <i class="bi bi-trash"></i>
-                        </button>
-                    </td>
-                </tr>
-            `;
-            tableBody.append(row);
+            tableBody.append(buildUserRow(user));
         });
     }
 });
