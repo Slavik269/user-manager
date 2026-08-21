@@ -4,6 +4,7 @@
 //http://user-manager.test/api/users.php?id=1
 
 require_once '../config/database.php';
+require_once '../includes/get-users.php';
 header('Content-Type: application/json; charset=utf-8');
 
 function validateUserInput($nameFirst, $nameLast, $role, $status)
@@ -88,13 +89,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         exit;
     }
 
-    $stmt = $pdo->query(
-        "SELECT id, name_first, name_last, status, role
-         FROM users"
-    );
+    $users = getAllUsers($pdo);
     
-    $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
     echo json_encode([
         'status' => true,
         'error' => null,

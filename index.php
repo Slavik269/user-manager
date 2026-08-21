@@ -1,5 +1,10 @@
 <?php
 
+require_once 'config/database.php';
+require_once 'includes/get-users.php';
+
+$users = getAllUsers($pdo);
+
 /**
  * Робимо імітацію системи керування користувачами у дуже скороченому вигляді.	
  * Усі дії мають бути без перезавантаження сторінки. Все через Ajax	
@@ -99,7 +104,52 @@
                         <th>Options</th>
                     </tr>
                 </thead>
-                <tbody id="usersTableBody"></tbody>
+                <tbody id="usersTableBody">
+                    <?php foreach ($users as $user): ?>
+                        <tr data-user-id="<?= (int)$user['id'] ?>">
+                            <td>
+                                <input
+                                    type="checkbox"
+                                    class="form-check-input user-checkbox"
+                                    value="<?= (int)$user['id'] ?>"
+                                >
+                            </td>
+
+                            <td>
+                                <?= htmlspecialchars($user['name_first']) ?>
+                                <?= htmlspecialchars($user['name_last']) ?>
+                            </td>
+
+                            <td class="status-cell">
+                                <?php if ((int)$user['status'] === 1): ?>
+                                    <span class="text-success fs-4">●</span>
+                                <?php else: ?>
+                                    <span class="text-secondary fs-4">●</span>
+                                <?php endif; ?>
+                            </td>
+
+                            <td>
+                                <?= htmlspecialchars($user['role']) ?>
+                            </td>
+
+                            <td>
+                                <button
+                                    type="button"
+                                    class="btn btn-sm btn-outline-primary edit-user"
+                                    data-id="<?= (int)$user['id'] ?>">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+
+                                <button
+                                    type="button"
+                                    class="btn btn-sm btn-outline-danger delete-user"
+                                    data-id="<?= (int)$user['id'] ?>">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
             </table>
         </div>
 

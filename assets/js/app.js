@@ -2,8 +2,6 @@ $(document).ready(function () {
 
     const API_URL = 'api/users.php';
 
-    loadUsers();
-
     $('.add-user').on('click', function () {
 
         $('#userModalTitle').text('Add User');
@@ -280,27 +278,6 @@ $(document).ready(function () {
         modal.show();
     }
 
-    function loadUsers() {
-
-        $.ajax({
-            url: API_URL,
-            method: 'GET',
-            dataType: 'json',
-
-            success: function (response) {
-
-                if (response.status === true) {
-                    renderUsers(response.users);
-                } else {
-                    showMessage(response.error.message);
-                }
-
-            },
-
-            error: handleAjaxError
-        });
-    }
-
     function buildUserRow(user) {
 
         const statusCircle = user.status == 1
@@ -348,15 +325,5 @@ $(document).ready(function () {
         `;
     }
 
-    function renderUsers(users) {
-
-        const tableBody = $('#usersTableBody');
-
-        tableBody.empty();
-
-        users.forEach(function (user) {
-            tableBody.append(buildUserRow(user));
-        });
-    }
 });
 
