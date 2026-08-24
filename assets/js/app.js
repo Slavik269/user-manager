@@ -4,6 +4,8 @@ $(document).ready(function () {
 
     $('.add-user').on('click', function () {
 
+        resetUserFormErrors();
+
         $('#userModalTitle').text('Add User');
         $('#userId').val('');
         $('#firstName').val('');
@@ -33,6 +35,9 @@ $(document).ready(function () {
             success: function (response) {
 
                 if (response.status === true) {
+
+                    resetUserFormErrors();
+
                     const user = response.user;
 
                     $('#userModalTitle').text('Edit User');
@@ -62,6 +67,8 @@ $(document).ready(function () {
 
         $('#confirmDelete').removeData('ids');
         $('#confirmDelete').data('id', userId);
+
+        showDeleteUsers([userId]);
 
         const modal = new bootstrap.Modal('#deleteModal');
         modal.show();
@@ -158,6 +165,8 @@ $(document).ready(function () {
 
             $('#confirmDelete').data('ids', selectedUsers);
 
+            showDeleteUsers(selectedUsers);
+
             const modal = new bootstrap.Modal('#deleteModal');
             modal.show();
 
@@ -183,14 +192,27 @@ $(document).ready(function () {
 
                     selectedUsers.forEach(function (id) {
 
-                        $(`tr[data-user-id="${id}"] .status-cell`)
-                            .html(statusCircle);
+                        if (response.not_found.includes(Number(id))) {
 
+                            $(`tr[data-user-id="${id}"]`).remove();
+
+                        } else {
+
+                            $(`tr[data-user-id="${id}"] .status-cell`).html(statusCircle);
+                        }
                     });
+                    
+                    if (response.not_found.length > 0) {
+
+                        showMessage(
+                            'Some selected users have already been deleted from the database.'
+                        );
+                    }
 
                     resetSelection();
 
                 } else {
+
                     showMessage(response.error.message);
                 }
             },
@@ -199,6 +221,27 @@ $(document).ready(function () {
     });
 
     $('#saveUser').on('click', function () {
+
+        resetUserFormErrors();
+
+        const nameFirst = $('#firstName').val().trim();
+        const nameLast = $('#lastName').val().trim();
+
+        let hasError = false;
+
+        if (nameFirst === '') {
+            $('#firstNameError').removeClass('d-none');
+            hasError = true;
+        }
+
+        if (nameLast === '') {
+            $('#lastNameError').removeClass('d-none');
+            hasError = true;
+        }
+
+        if (hasError) {
+            return;
+        }
 
         const userData = {
             id: $('#userId').val(),
@@ -218,6 +261,8 @@ $(document).ready(function () {
 
                     if (response.status === true) {
 
+                        $('#userFormError').addClass('d-none').text('');
+                        
                         const modal = bootstrap.Modal.getInstance(
                             document.getElementById('userModal')
                         );
@@ -234,7 +279,14 @@ $(document).ready(function () {
 
                         if (userData.id === '') {
 
+                            const selectAllChecked = $('#selectAllUsers').prop('checked');
+
                             $('#usersTableBody').append(buildUserRow(user));
+
+                            if (selectAllChecked) {
+                                $(`tr[data-user-id="${response.id}"] .user-checkbox`)
+                                    .prop('checked', true);
+                            }
 
                         } else {
 
@@ -244,7 +296,9 @@ $(document).ready(function () {
 
                     } else {
 
-                        showMessage(response.error.message);
+                        $('#userFormError')
+                            .removeClass('d-none')
+                            .text(response.error.message);
 
                     }
                 },
@@ -324,6 +378,41 @@ $(document).ready(function () {
             </tr>
         `;
     }
+    
+    function resetUserFormErrors() {
+
+        $('#userFormError')
+            .addClass('d-none')
+            .text('');
+
+        $('#firstNameError').addClass('d-none');
+        $('#lastNameError').addClass('d-none');
+        }
+    
+
+    function showDeleteUsers(ids) {
+
+        const container = $('#deleteUsersList').empty();
+        let count = 0;
+
+        ids.forEach(function (id) {
+
+            const row = $(`tr[data-user-id="${id}"]`);
+            const name = row.find('td').eq(1).text().trim();
+
+            if (name && count < 5) {
+                $('<div>').text(name).appendTo(container);
+                count++;
+            }
+        });
+
+        if (ids.length > 5) {
+            $('<div>')
+                .text(`... and ${ids.length - 5} more`)
+                .appendTo(container);
+        }
+    }
 
 });
+
 

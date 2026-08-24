@@ -133,6 +133,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         }
 
+        $notFoundIds = [];
+
         foreach ($users as $userId) {
 
             $userId = (int)$userId;
@@ -141,27 +143,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 continue;
             }
 
-            if ($action === 'active') {
+            $status = $action === 'active' ? 1 : 0;
 
-                $stmt = $pdo->prepare(
-                    "UPDATE users SET status = 1 WHERE id = :id"
-                );
-
-            } else {
-
-                $stmt = $pdo->prepare(
-                    "UPDATE users SET status = 0 WHERE id = :id"
-                );
-            }
+            $stmt = $pdo->prepare(
+                "UPDATE users
+                SET status = :status
+                WHERE id = :id"
+            );
 
             $stmt->execute([
+                'status' => $status,
                 'id' => $userId
             ]);
+
+            if ($stmt->rowCount() === 0) {
+
+                $stmt = $pdo->prepare(
+                    "SELECT id FROM users WHERE id = :id"
+                );
+
+                $stmt->execute([
+                    'id' => $userId
+                ]);
+
+                if (!$stmt->fetch()) {
+                    $notFoundIds[] = $userId;
+                }
+            }
         }
 
         echo json_encode([
             'status' => true,
-            'error' => null
+            'error' => null,
+            'not_found' => $notFoundIds
         ]);
         exit;
     }

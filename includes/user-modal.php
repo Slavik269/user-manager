@@ -29,6 +29,10 @@
                         class="form-control"
                         id="firstName"
                         placeholder="Enter first name">
+
+                    <div id="firstNameError" class="text-danger small mt-1 d-none">
+                        Enter your first name
+                    </div>
                 </div>
 
                 <div class="mb-3">
@@ -41,6 +45,10 @@
                         class="form-control"
                         id="lastName"
                         placeholder="Enter last name">
+
+                    <div id="lastNameError" class="text-danger small mt-1 d-none">
+                        Enter your last name
+                    </div>
                 </div>
 
                 <div class="mb-3">
@@ -76,7 +84,11 @@
 
                     </select>
                 </div>
-
+                <div
+                    id="userFormError"
+                    class="alert alert-danger d-none mb-0"
+                    role="alert">
+                </div>
             </div>
 
             <div class="modal-footer">

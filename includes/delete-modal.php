@@ -12,9 +12,11 @@
                 </button>
 
             </div>
-
+            
             <div class="modal-body">
-                Are you sure you want to delete this user?
+                <p>Are you sure you want to delete:</p>
+
+                <div id="deleteUsersList"></div>
             </div>
 
             <div class="modal-footer">
