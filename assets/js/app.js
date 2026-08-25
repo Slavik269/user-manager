@@ -186,9 +186,9 @@ $(document).ready(function () {
 
                 if (response.status === true) {
 
-                    const statusCircle = action === 'active'
-                        ? '<span class="text-success fs-4">●</span>'
-                        : '<span class="text-secondary fs-4">●</span>';
+                    const statusClass = action === 'active'
+                        ? 'text-success'
+                        : 'text-secondary';
 
                     selectedUsers.forEach(function (id) {
 
@@ -198,7 +198,9 @@ $(document).ready(function () {
 
                         } else {
 
-                            $(`tr[data-user-id="${id}"] .status-cell`).html(statusCircle);
+                            $(`tr[data-user-id="${id}"] .status-cell span`)
+                                .removeClass('text-success text-secondary')
+                                .addClass(statusClass);
                         }
                     });
                     
@@ -334,9 +336,9 @@ $(document).ready(function () {
 
     function buildUserRow(user) {
 
-        const statusCircle = user.status == 1
-            ? '<span class="text-success fs-4">●</span>'
-            : '<span class="text-secondary fs-4">●</span>';
+        const statusClass = user.status == 1
+            ? 'text-success'
+            : 'text-secondary';
 
         return `
             <tr data-user-id="${user.id}">
@@ -353,7 +355,7 @@ $(document).ready(function () {
                 </td>
 
                 <td class="status-cell">
-                    ${statusCircle}
+                    <span class="fs-4 ${statusClass}">●</span>
                 </td>
 
                 <td>
