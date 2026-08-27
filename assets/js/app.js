@@ -84,9 +84,10 @@ $(document).ready(function () {
         $.ajax({
             url: API_URL,
             method: 'DELETE',
-            data: {
+            contentType: 'application/json',
+            data: JSON.stringify({
                 ids: ids
-            },
+            }),
             dataType: 'json',
 
             success: function (response) {
@@ -186,10 +187,6 @@ $(document).ready(function () {
 
                 if (response.status === true) {
 
-                    const statusClass = action === 'active'
-                        ? 'text-success'
-                        : 'text-secondary';
-
                     selectedUsers.forEach(function (id) {
 
                         if (response.not_found.includes(Number(id))) {
@@ -199,8 +196,7 @@ $(document).ready(function () {
                         } else {
 
                             $(`tr[data-user-id="${id}"] .status-cell span`)
-                                .removeClass('text-success text-secondary')
-                                .addClass(statusClass);
+                                .toggleClass('text-success', action === 'active');
                         }
                     });
                     
@@ -336,9 +332,9 @@ $(document).ready(function () {
 
     function buildUserRow(user) {
 
-        const statusClass = user.status == 1
+        const activeClass = user.status == 1
             ? 'text-success'
-            : 'text-secondary';
+            : '';
 
         return `
             <tr data-user-id="${user.id}">
@@ -355,7 +351,11 @@ $(document).ready(function () {
                 </td>
 
                 <td class="status-cell">
-                    <span class="fs-4 ${statusClass}">●</span>
+                    <span
+                        class="fs-4 ${activeClass}"
+                        style="color: var(--bs-secondary);">
+                        ●
+                    </span>
                 </td>
 
                 <td>

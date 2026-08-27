@@ -125,7 +125,11 @@ $users = getAllUsers($pdo);
                             </td>
 
                             <td class="status-cell">
-                                <span class="fs-4 <?= (int)$user['status'] === 1 ? 'text-success' : 'text-secondary' ?>">●</span>
+                                <span
+                                    class="fs-4 <?= (int)$user['status'] === 1 ? 'text-success' : '' ?>"
+                                    style="color: var(--bs-secondary);">
+                                    ●
+                                </span>
                             </td>
 
                             <td>

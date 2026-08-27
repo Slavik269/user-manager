@@ -1,41 +1,8 @@
 <?php
 
-//http://user-manager.test/api/users.php
-//http://user-manager.test/api/users.php?id=1
-
 require_once '../config/database.php';
 require_once '../includes/get-users.php';
 header('Content-Type: application/json; charset=utf-8');
-
-function validateUserInput($nameFirst, $nameLast, $role, $status)
-{
-    // Перевіряємо обов'язкові поля
-    if ($nameFirst === '' || $nameLast === '' || $role === '') {
-        return [
-            'code' => 101,
-            'message' => 'Required fields are empty'
-        ];
-    }
-
-    // Перевіряємо допустимість ролі
-    if ($role !== 'admin' && $role !== 'user') {
-        return [
-            'code' => 102,
-            'message' => 'Invalid role'
-        ];
-    }
-
-    // Перевіряємо статус
-    if ($status !== 0 && $status !== 1) {
-        return [
-            'code' => 106,
-            'message' => 'Invalid status'
-        ];
-    }
-
-    return null;
-}
-
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 
@@ -187,18 +154,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $role = trim($_POST['role'] ?? '');
 
 
-    $validationError = validateUserInput(
-        $nameFirst,
-        $nameLast,
-        $role,
-        $status
-    );
-
-    if ($validationError !== null) {
+    if ($nameFirst === '' || $nameLast === '' || $role === '') {
 
         echo json_encode([
             'status' => false,
-            'error' => $validationError
+            'error' => [
+                'code' => 101,
+                'message' => 'Required fields are empty'
+            ]
+        ]);
+
+        exit;
+    }
+
+    if ($role !== 'admin' && $role !== 'user') {
+
+        echo json_encode([
+            'status' => false,
+            'error' => [
+                'code' => 102,
+                'message' => 'Invalid role'
+            ]
+        ]);
+
+        exit;
+    }
+
+    if ($status !== 0 && $status !== 1) {
+
+        echo json_encode([
+            'status' => false,
+            'error' => [
+                'code' => 106,
+                'message' => 'Invalid status'
+            ]
         ]);
 
         exit;
@@ -275,9 +264,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 if ($_SERVER['REQUEST_METHOD'] === 'DELETE') {
 
-    parse_str(file_get_contents("php://input"), $_DELETE);
+    $data = json_decode(file_get_contents('php://input'), true);
 
-    $ids = $_DELETE['ids'] ?? [];
+    $ids = $data['ids'] ?? [];
 
     if (!is_array($ids) || count($ids) === 0) {
 
